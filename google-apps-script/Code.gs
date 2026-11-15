@@ -136,7 +136,7 @@ function savePartner_(d) {
       htmlBody: wrap_(
         '<p>Dear ' + esc_(first_(name)) + ',</p>' +
         '<p>Thank you for your interest in supporting <b>' + esc_(EVENT.name) + '</b> on ' + esc_(EVENT.date) + '. ' +
-        'A member of the Body Life of Families team will be in touch soon.</p>' +
+        'A member of the Body Life for Families team will be in touch soon.</p>' +
         '<p>With gratitude,<br>The BLF family</p>'
       )
     });
