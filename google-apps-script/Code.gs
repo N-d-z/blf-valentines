@@ -1,5 +1,5 @@
 /**
- * BLF Valentine's Gala — waitlist sign-ups and partner enquiries.
+ * BLFF Valentine's Gala — waitlist sign-ups and partner enquiries.
  *
  * Paste this whole file into Extensions → Apps Script of your Google Sheet.
  * Setup steps are in SETUP.md next to this file.
@@ -12,7 +12,7 @@ const NOTIFY_EMAIL = 'you@example.com';
 const SEND_CONFIRMATION = true;
 
 // 3. Shown as the sender name on emails from this script.
-const SENDER_NAME = "BLF Valentine's Gala";
+const SENDER_NAME = "BLFF Valentine's Gala";
 
 const EVENT = {
   name: "Love, Faith & Real Life: The Valentine's Gala",
@@ -49,7 +49,7 @@ function doPost(e) {
 }
 
 function doGet() {
-  return ContentService.createTextOutput('BLF sign-up form is connected and working.');
+  return ContentService.createTextOutput('BLFF sign-up form is connected and working.');
 }
 
 /** Run this once from the editor so Google asks for permission to use your Sheet and email. */
@@ -130,14 +130,14 @@ function savePartner_(d) {
   if (SEND_CONFIRMATION && quota_() >= 1) {
     MailApp.sendEmail({
       to: email,
-      subject: "Thank you for your interest in partnering with BLF",
+      subject: "Thank you for your interest in partnering with BLFF",
       name: SENDER_NAME,
       replyTo: NOTIFY_EMAIL,
       htmlBody: wrap_(
         '<p>Dear ' + esc_(first_(name)) + ',</p>' +
         '<p>Thank you for your interest in supporting <b>' + esc_(EVENT.name) + '</b> on ' + esc_(EVENT.date) + '. ' +
         'A member of the Body Life for Families team will be in touch soon.</p>' +
-        '<p>With gratitude,<br>The BLF family</p>'
+        '<p>With gratitude,<br>The BLFF family</p>'
       )
     });
   }
@@ -147,7 +147,7 @@ function sendGuestConfirmation_(name, email, type, partner) {
   const pass = type === 'Single' ? 'a Singles Pass' : 'a Couples Pass' + (partner ? ' for you and ' + first_(partner) : '');
   MailApp.sendEmail({
     to: email,
-    subject: "You're on the waitlist: BLF Valentine's Gala",
+    subject: "You're on the waitlist: BLFF Valentine's Gala",
     name: SENDER_NAME,
     replyTo: NOTIFY_EMAIL,
     htmlBody: wrap_(
@@ -165,7 +165,7 @@ function sendGuestConfirmation_(name, email, type, partner) {
         '<li>Your confirmation and event instructions follow after payment.</li>' +
       '</ol>' +
       '<p>Joining the waitlist is free and does not reserve a seat yet.</p>' +
-      '<p>With love,<br>The BLF family</p>'
+      '<p>With love,<br>The BLFF family</p>'
     )
   });
 }
@@ -206,7 +206,7 @@ function row_(k, v) {
 function wrap_(inner) {
   return '<div style="font-family:Georgia,serif;background:#F7F1E8;padding:28px 16px">' +
     '<div style="max-width:560px;margin:0 auto;background:#FBF7F1;border:1px solid #D6B77A;border-radius:14px;overflow:hidden">' +
-      '<div style="background:#641E32;color:#EBD7AC;padding:18px 24px;font-size:20px;font-style:italic">BLF Valentine\'s Gala 2027</div>' +
+      '<div style="background:#641E32;color:#EBD7AC;padding:18px 24px;font-size:20px;font-style:italic">BLFF Valentine\'s Gala 2027</div>' +
       '<div style="padding:22px 24px;color:#30231F;font-size:16px;line-height:1.6">' + inner + '</div>' +
       '<div style="padding:14px 24px;border-top:1px solid #EFE6D8;font-size:13px;color:#7a6a63">' +
         '<a href="' + EVENT.site + '" style="color:#641E32">' + EVENT.site.replace('https://', '') + '</a></div>' +

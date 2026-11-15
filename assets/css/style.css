@@ -163,7 +163,7 @@ ul, ol { padding: 0; list-style: none; }
   box-shadow: 0 0 24px -6px rgba(214, 183, 122, .55);
 }
 .crest::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; border: 1px solid rgba(214, 183, 122, .3); }
-.crest span { font-family: var(--serif); font-style: italic; font-weight: 600; font-size: .98rem; color: var(--gold-light); line-height: 1; letter-spacing: .02em; }
+.crest span { font-family: var(--serif); font-style: italic; font-weight: 600; font-size: .86rem; color: var(--gold-light); line-height: 1; letter-spacing: 0; }
 .brand-text { line-height: 1.1; }
 .brand-text b { display: block; font-family: var(--serif); font-weight: 600; font-size: 1.35rem; letter-spacing: .14em; }
 .brand-text small { display: block; font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }

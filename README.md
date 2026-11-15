@@ -1,4 +1,4 @@
-# BLF Valentine's Special — landing & waitlist page
+# BLFF Valentine's Special — landing & waitlist page
 
 Live at https://blf-valentines.vercel.app. Every push to `main` redeploys it on Vercel.
 
