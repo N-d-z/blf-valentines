@@ -3,6 +3,7 @@
   var cfg = window.BLF_CONFIG || {};
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
   /* ---------- Header shadow on scroll ---------- */
   var header = $("#header");
@@ -21,7 +22,7 @@
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") setMenu(false); });
 
   /* ---------- Countdown ---------- */
-  var target = new Date(cfg.eventStart || "2027-02-14T17:00:00+01:00").getTime();
+  var target = new Date(cfg.eventStart || "2027-02-14T16:00:00+01:00").getTime();
   var els = { d: $("#cdD"), h: $("#cdH"), m: $("#cdM"), s: $("#cdS") };
   var pad = function (n) { return n < 10 ? "0" + n : String(n); };
   var tick = function () {
@@ -42,42 +43,62 @@
       entries.forEach(function (e) {
         if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
       });
-    }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+    }, { threshold: 0.08, rootMargin: "0px 0px -30px 0px" });
     reveals.forEach(function (el) { io.observe(el); });
   } else {
     reveals.forEach(function (el) { el.classList.add("in"); });
   }
 
-  /* ---------- Pass toggle ---------- */
-  var toggle = $("#tierToggle");
-  var tiers = $$(".tier");
-  var setTier = function (which) {
-    toggle.setAttribute("data-active", which);
-    $$("button", toggle).forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.tier === which)); });
-    tiers.forEach(function (t) { t.classList.toggle("is-active", t.dataset.tier === which); });
-  };
-  $$("button", toggle).forEach(function (b) {
-    b.addEventListener("click", function () { setTier(b.dataset.tier); });
-    b.addEventListener("keydown", function (e) {
-      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        var next = b.dataset.tier === "single" ? "couple" : "single";
-        setTier(next);
-        $('[data-tier="' + next + '"]', toggle).focus();
-      }
-    });
-  });
-  // On wide screens, pointing at a card highlights it
-  tiers.forEach(function (t) {
-    t.addEventListener("mouseenter", function () { if (window.innerWidth >= 820) setTier(t.dataset.tier); });
-  });
-
-  /* ---------- Social links ---------- */
+  /* ---------- Social links (hidden until set in config.js) ---------- */
   var socials = cfg.socials || {};
   $$("[data-social]").forEach(function (a) {
     var url = socials[a.dataset.social];
     if (url) { a.href = url; a.target = "_blank"; a.rel = "noopener"; }
     else { a.parentElement.style.display = "none"; }
   });
+
+  /* ---------- Sending ---------- */
+  // Google Apps Script receives JSON as plain text (no CORS preflight).
+  // Formspree and PHP receive regular form fields.
+  var send = function (data) {
+    var endpoint = (cfg.formEndpoint || "").trim();
+    if (!endpoint) {
+      try {
+        var list = JSON.parse(localStorage.getItem("blf_submissions") || "[]");
+        list.push(data);
+        localStorage.setItem("blf_submissions", JSON.stringify(list));
+      } catch (e) { /* storage unavailable: still show success in demo mode */ }
+      return new Promise(function (res) { setTimeout(res, 900); });
+    }
+    if (endpoint.indexOf("script.google.com") !== -1) {
+      return fetch(endpoint, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(data)
+      });
+    }
+    var fd = new FormData();
+    Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
+    return fetch(endpoint, { method: "POST", body: fd, headers: { Accept: "application/json" } })
+      .then(function (r) { if (!r.ok) throw new Error("Server responded " + r.status); });
+  };
+
+  var spinnerHTML = function (text) {
+    return '<span style="display:inline-flex;align-items:center;gap:.6rem"><span class="spinner"></span>' + text + "</span>";
+  };
+  var setErr = function (key, bad) {
+    var f = $('[data-field="' + key + '"]');
+    if (f) f.classList.toggle("has-error", bad);
+    return !bad;
+  };
+  var focusFirstError = function (scope) {
+    var first = $(".has-error", scope);
+    if (!first) return;
+    first.scrollIntoView({ behavior: "smooth", block: "center" });
+    var inp = $("input, textarea", first);
+    if (inp) inp.focus({ preventScroll: true });
+  };
 
   /* ---------- Waitlist form ---------- */
   var form = $("#waitlistForm");
@@ -93,110 +114,71 @@
     partnerInput.tabIndex = show ? 0 : -1;
   };
   $$('input[name="type"]', form).forEach(function (r) {
-    r.addEventListener("change", function () {
-      showPartner(r.value !== "Single");
-      $('[data-field="type"]').classList.remove("has-error");
-    });
+    r.addEventListener("change", function () { showPartner(r.value !== "Single"); setErr("type", false); });
+  });
+  form.elements.consent.addEventListener("change", function () { setErr("consent", false); });
+  ["name", "email", "phone"].forEach(function (n) {
+    form.elements[n].addEventListener("input", function () { setErr(n, false); });
   });
 
-  // "Reserve" buttons on the pass cards preselect the attendance type
+  // Pass buttons preselect the attendance type
   $$("[data-reserve]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var r = $('input[name="type"][value="' + btn.dataset.reserve + '"]', form);
       if (r) { r.checked = true; r.dispatchEvent(new Event("change")); }
-      setTimeout(function () { $("#f-name").focus({ preventScroll: true }); }, 650);
+      setTimeout(function () { $("#f-name").focus({ preventScroll: true }); }, 700);
     });
   });
-
-  ["name", "email", "phone"].forEach(function (n) {
-    form.elements[n].addEventListener("input", function () {
-      $('[data-field="' + n + '"]').classList.remove("has-error");
-    });
-  });
-
-  var validate = function () {
-    var ok = true;
-    var v = function (n) { return form.elements[n].value.trim(); };
-    var fail = function (n) { $('[data-field="' + n + '"]').classList.add("has-error"); ok = false; };
-    if (v("name").length < 2) fail("name");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v("email"))) fail("email");
-    if (v("phone").replace(/\D/g, "").length < 7) fail("phone");
-    if (!$('input[name="type"]:checked', form)) fail("type");
-    return ok;
-  };
-
-  var setLoading = function (on) {
-    submitBtn.disabled = on;
-    submitLabel.innerHTML = on
-      ? '<span style="display:inline-flex;align-items:center;gap:.6rem"><span class="spinner"></span>Saving your seat</span>'
-      : "Join the Priority List";
-  };
-
-  var send = function (data) {
-    var endpoint = (cfg.formEndpoint || "").trim();
-    if (!endpoint) {
-      // Demo mode: keep a copy in this browser only
-      try {
-        var list = JSON.parse(localStorage.getItem("blf_waitlist") || "[]");
-        list.push(data);
-        localStorage.setItem("blf_waitlist", JSON.stringify(list));
-      } catch (e) { /* storage unavailable, still show success */ }
-      return new Promise(function (res) { setTimeout(res, 900); });
-    }
-    var fd = new FormData();
-    Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
-    var isGoogle = endpoint.indexOf("script.google.com") !== -1;
-    return fetch(endpoint, {
-      method: "POST",
-      body: fd,
-      mode: isGoogle ? "no-cors" : "cors",
-      headers: isGoogle ? undefined : { Accept: "application/json" }
-    }).then(function (r) {
-      if (!isGoogle && !r.ok) throw new Error("Server responded " + r.status);
-    });
-  };
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     alertBox.classList.remove("is-shown");
-    if (!validate()) {
-      var first = $(".has-error", form);
-      if (first) {
-        first.scrollIntoView({ behavior: "smooth", block: "center" });
-        var inp = $("input, textarea", first); if (inp) inp.focus({ preventScroll: true });
-      }
-      return;
-    }
-    if (form.elements.company.value) return; // bot
+    var v = function (n) { return form.elements[n].value.trim(); };
+    var typeEl = $('input[name="type"]:checked', form);
+    var ok = [
+      setErr("name", v("name").length < 2),
+      setErr("email", !EMAIL_RE.test(v("email"))),
+      setErr("phone", v("phone").replace(/\D/g, "").length < 7),
+      setErr("type", !typeEl),
+      setErr("consent", !form.elements.consent.checked)
+    ].every(Boolean);
+    if (!ok) { focusFirstError(form); return; }
+    if (form.elements.company.value) return; // spam trap
 
-    var type = $('input[name="type"]:checked', form).value;
+    var type = typeEl.value;
     var data = {
-      name: form.elements.name.value.trim(),
-      email: form.elements.email.value.trim(),
-      phone: form.elements.phone.value.trim(),
+      formType: "waitlist",
+      name: v("name"),
+      email: v("email"),
+      phone: v("phone"),
       type: type,
-      partner: type === "Single" ? "" : form.elements.partner.value.trim(),
-      notes: form.elements.notes.value.trim(),
+      partner: type === "Single" ? "" : v("partner"),
+      notes: v("notes"),
+      consent: "Yes",
       submittedAt: new Date().toISOString()
     };
 
-    setLoading(true);
+    submitBtn.disabled = true;
+    submitLabel.innerHTML = spinnerHTML("Saving your place");
     send(data).then(function () {
       var first = data.name.split(/\s+/)[0];
       var what = type === "Single"
         ? "a Singles Pass"
         : "a Couples Pass" + (data.partner ? " for you and " + data.partner.split(/\s+/)[0] : "");
-      $("#successMsg").textContent = "Thank you, " + first + ". We've noted your interest in " + what +
-        ". Early-bird pricing and the full programme will reach you at " + data.email + " and on WhatsApp before public release.";
+      $("#successMsg").textContent = "Thank you, " + first + ". We've saved your interest in " + what +
+        ". Look out for an email to " + data.email + " and a WhatsApp message from us.";
       form.style.display = "none";
       success.classList.add("is-shown");
       success.focus({ preventScroll: true });
       $("#formCard").scrollIntoView({ behavior: "smooth", block: "center" });
       hearts();
     }).catch(function () {
-      alertBox.textContent = "Your details didn't send. Check your connection and try again.";
+      alertBox.textContent = "Your details didn't send. Check your internet connection and try again.";
       alertBox.classList.add("is-shown");
-    }).then(function () { setLoading(false); });
+    }).then(function () {
+      submitBtn.disabled = false;
+      submitLabel.textContent = "Join the Waitlist";
+    });
   });
 
   $("#againBtn").addEventListener("click", function () {
@@ -222,4 +204,50 @@
       (function (el) { setTimeout(function () { el.remove(); }, 3500); })(h);
     }
   }
+
+  /* ---------- Partner enquiry ---------- */
+  var pToggle = $("#partnerToggle"), pForm = $("#partnerForm"), pSuccess = $("#pSuccess");
+  var pAlert = $("#pAlert"), pSubmit = $("#pSubmit"), pLabel = $("#pLabel");
+  pToggle.addEventListener("click", function () {
+    var open = !pForm.classList.contains("is-shown");
+    pForm.classList.toggle("is-shown", open);
+    pToggle.setAttribute("aria-expanded", String(open));
+    if (open) setTimeout(function () { $("#p-name").focus({ preventScroll: true }); }, 100);
+  });
+  [["name", "p-name"], ["email", "p-email"], ["phone", "p-phone"]].forEach(function (p) {
+    pForm.elements[p[0]].addEventListener("input", function () { setErr(p[1], false); });
+  });
+  pForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    pAlert.classList.remove("is-shown");
+    var v = function (n) { return pForm.elements[n].value.trim(); };
+    var ok = [
+      setErr("p-name", v("name").length < 2),
+      setErr("p-email", !EMAIL_RE.test(v("email"))),
+      setErr("p-phone", v("phone").replace(/\D/g, "").length < 7)
+    ].every(Boolean);
+    if (!ok) { focusFirstError(pForm); return; }
+    var data = {
+      formType: "partner",
+      name: v("name"),
+      organisation: v("organisation"),
+      email: v("email"),
+      phone: v("phone"),
+      message: v("message"),
+      submittedAt: new Date().toISOString()
+    };
+    pSubmit.disabled = true;
+    pLabel.innerHTML = spinnerHTML("Sending");
+    send(data).then(function () {
+      pForm.classList.remove("is-shown");
+      pToggle.style.display = "none";
+      pSuccess.classList.add("is-shown");
+    }).catch(function () {
+      pAlert.textContent = "Your enquiry didn't send. Check your internet connection and try again.";
+      pAlert.classList.add("is-shown");
+    }).then(function () {
+      pSubmit.disabled = false;
+      pLabel.textContent = "Send Enquiry";
+    });
+  });
 })();
