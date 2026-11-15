@@ -12,7 +12,7 @@ window.BLF_CONFIG = {
   // Recommended: the Google Sheet web app URL from google-apps-script/SETUP.md
   //   e.g. "https://script.google.com/macros/s/XXXX/exec"
   // Other options: a Formspree URL, or "submit.php" on a cPanel/PHP host.
-  formEndpoint: "https://script.google.com/macros/s/AKfycbyl_t5puQ6gE4hX5m3KZ93lJqgKdqN5qvm4XAYKsj98poCR5dLjxnHTiWTDN-WzMrak/exec",
+  formEndpoint: "https://script.google.com/macros/s/AKfycbwSfUnZNTEcan8-UExiNy1ALKM63QuDARqo4ApTZzdlU8V1zKoGO54NsJQanayNZ8RA/exec",
 
   // Social links for the footer. Leave "" to hide a link.
   socials: {
