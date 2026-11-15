@@ -1,6 +1,6 @@
 # BLFF Valentine's Special — landing & waitlist page
 
-Live at https://blf-valentines.vercel.app. Every push to `main` redeploys it on Vercel.
+Live at https://blff-valentines.vercel.app. Every push to `main` redeploys it on Vercel.
 
 A plain static website: fonts, icons and photos are bundled, nothing loads from other sites.
 

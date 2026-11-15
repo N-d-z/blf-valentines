@@ -20,7 +20,7 @@ const EVENT = {
   time: '4:00 PM',
   venue: 'Golden Tulip La Kings, Port Harcourt',
   dress: 'Black Tie & Velvet Glamour',
-  site: 'https://blf-valentines.vercel.app'
+  site: 'https://blff-valentines.vercel.app'
 };
 
 const WAITLIST_SHEET = 'Waitlist';
